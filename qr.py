@@ -24,6 +24,9 @@ client.stop()
 
 # Mopidy is too slow for volume change, so we use alsa
 m = alsaaudio.Mixer('Headphone')
+m.setvolume(80)
+
+
 
 def ack_sound():
 	global seq, sid
