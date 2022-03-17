@@ -191,6 +191,8 @@ def decodethreadfn():
 				if codes[d].not_seen_cnt > MAX_NOT_SEEN:
 					print('Lost %s' % d)
 					del codes[d]
+			else:
+				codes[d].not_seen_cnt = 0
 
 
 mutex = threading.Lock()
