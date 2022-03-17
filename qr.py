@@ -142,16 +142,23 @@ codes = dict()
 
 frame = None
 def decodethreadfn():
-	global codes, MAX_NOT_SEEN, frame
+	global codes, MAX_NOT_SEEN, frame, mutex
 
     
 	while True:
+		print('decoding')
+		mutex.acquire()
+
 		if frame is None:
 			time.sleep(1)
+			mutex.release()
 			continue
 
-		d = decode(frame)
-		#print(d)
+		frame_copy = frame.copy()
+		mutex.release()
+		
+		d = decode(frame_copy)
+		print(d)
 
 		data = [x.data.decode('utf-8') for x in d]
 		bbox = [ [[-p.x, p.y] for p in x.polygon] for x in d]
@@ -162,7 +169,7 @@ def decodethreadfn():
 				continue
 
 			if d not in codes:
-				if d.startswith('https://www.youtube.com'):
+				if d.startswith('https://www.youtube.com') or d.startswith('https://youtu.be'):
 					codes[d] = YoutubeCode(d, bbox[i])
 				elif d == 'volume':
 					codes[d] = VolumeCode(d, bbox[i])
@@ -186,6 +193,8 @@ def decodethreadfn():
 					del codes[d]
 
 
+mutex = threading.Lock()
+
 decode_thread = threading.Thread(target=decodethreadfn)
 decode_thread.start()
 
@@ -197,4 +206,7 @@ p = subprocess.Popen(args, stdout=subprocess.PIPE)
 start_sound()
 while True:
     data = p.stdout.read(int(1024*1024*1.5))
+    mutex.acquire()
     frame = numpy.frombuffer(data, numpy.uint8, count=1024*1024).reshape((1024, 1024))
+    mutex.release()
+
